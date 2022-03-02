@@ -11,13 +11,13 @@ workflow ConvertToBamAndFilter {
         String run_name
 
         File ref      # path to reference file
-        File ref_sa
-        File ref_bwt
         File ref_amb
         File ref_ann
-        File ref_pac
+        File ref_bwt
         File ref_dict
-        File ref_index
+        File ref_fai
+        File ref_pac
+        File ref_sa
 
         # mem size/ disk size params
         Int small_mem_size_gb
