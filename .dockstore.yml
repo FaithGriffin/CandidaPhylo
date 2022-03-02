@@ -1,0 +1,7 @@
+version: 1.0
+workflows:
+   - name: Candida-Phylo
+     subclass: WDL
+     primaryDescriptorPath: /Candida-Phylo.wdl
+     testParameterFiles:
+     -  /Candida-Phylo.inputs.json
