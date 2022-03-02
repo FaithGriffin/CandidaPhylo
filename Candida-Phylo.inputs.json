@@ -1,0 +1,32 @@
+{
+    "ConvertToBamAndFilter.fastq_1":"${strain.C1_1.sample.fastq}",
+    "ConvertToBamAndFilter.fastq_2":"${strain.C1_2.sample.fastq}",
+  
+    "ConvertToBamAndFilter.run_name":"benchmark",
+    "ConvertToBamAndFilter.indel_filter_expr":"QD < 2.0 || FS > 60.0 || MQ < 40.0",
+    "ConvertToBamAndFilter.snp_filter_expr":"QD < 2.0 || FS > 60.0 || MQ < 40.0",
+
+    "ConvertToBamAndFilter":"${workspace.ref_fasta}",
+    "ConvertToBamAndFilter.ref_ann":"${workspace.ref_ann}",
+    "ConvertToBamAndFilter.ref_index":"${workspace.ref_index}",
+    "ConvertToBamAndFilter.ref_amb":"${workspace.ref_amb}",
+    "ConvertToBamAndFilter.ref_sa":"${workspace.ref_sa}",
+    "ConvertToBamAndFilter.ref_bwt":"${workspace.ref_bwt}",
+    "ConvertToBamAndFilter.ref_dict":"${workspace.ref_dict}",
+    "ConvertToBamAndFilter.ref_pac":"${workspace.ref_pac}",
+
+    "ConvertToBamAndFilter.docker":"xiaoli2020/fungi-gatk3:v1.0",
+    "ConvertToBamAndFilter.picard_path":"/opt/picard.jar",
+    "ConvertToBamAndFilter.gatk_path":"/opt/GenomeAnalysisTK.jar",
+
+    "ConvertToBamAndFilter.small_mem_size_gb":15,
+    "ConvertToBamAndFilter.med_mem_size_gb":30,
+    "ConvertToBamAndFilter.large_mem_size_gb":60,
+    "ConvertToBamAndFilter.extra_large_mem_size_gb":60,
+
+    "ConvertToBamAndFilter.disk_size":120,
+    "ConvertToBamAndFilter.med_disk_size":250,
+    "ConvertToBamAndFilter.large_disk_size":500,
+    "ConvertToBamAndFilter.extra_large_disk_size":700
+
+}
