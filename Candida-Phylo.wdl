@@ -4,6 +4,7 @@
 # WORKFLOW DEFINITION
 workflow ConvertToBamAndFilter {
         # input data
+        String sample_name
         String fastq_1
         String fastq_2
 
