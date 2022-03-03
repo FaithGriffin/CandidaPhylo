@@ -1,34 +1,14 @@
-## Copyright Broad Institute 2020
-##
-## Variant Calling pipeline for fungal haploid genomes
-## Developed by Xiao Li (xiaoli@broadinstitute.org)
-## Fungal Genomics Group, Infectious Disease and Microbiome Program.
-## The Broad Institute of MIT and Harvard
-##
-## Verions of the software used in this WDL:
-##   PICARD_VER=1.782
-##   GATK37_VER=3.7-93-ge9d8068
-##   SAMTOOLS_VER=1.3.1
-##   BWA_VER=0.7.12
-##   TABIX_VER=0.2.5_r1005
-##   BGZIP_VER=1.3
-##
-## Cromwell version support
-## - Successfully tested on v28, v30 and v36
-## - Does not work on versions < v23 due to output syntax
-##
-## LICENSING :
-## This script is released under the WDL source code license (BSD-3) (see LICENSE in
-## https://github.com/broadinstitute/wdl). Note however that the programs it calls may
-## be subject to different licenses. Users are responsible for checking that they are
-## authorized to run all programs before running this script. Please see the dockers
-## for detailed licensing information pertaining to the included programs.
+## version 1.0
+## Converts fastq files to BAM files --> Filtering Variants
 
-
+# WORKFLOW DEFINITION
 workflow GATK3_Germline_Variants {
     ## config params
     # input data
     String run_name
+    String sample_name
+    String fastq_1
+    String fastq_2
 
     File ref                   # path to reference file
     File ref_sa
@@ -65,27 +45,13 @@ workflow GATK3_Germline_Variants {
     String indel_filter_expr
 
     ## task calls
-    # run pipeline on each sample, in parallel
-    scatter(i in range(length(input_samples))) {
-        String sample_name = input_samples[i]
-        String input_bam = input_bams[i]
-
-        if (do_align) {
-            call SamToFastq {
-                input:
-                in_bam = input_bam,
-                sample_name = sample_name,
-                disk_size = large_disk_size,
-                mem_size_gb = small_mem_size_gb,
-                docker = docker,
-                picard_path = picard_path
-            }
+    
 
             call AlignAndSortBAM {
                 input:
                 sample_name = sample_name,
-                fq1 = SamToFastq.fq1,
-                fq2 = SamToFastq.fq2,
+                fq1 = fastq_1,
+                fq2 = fastq_2,
 
                 ref = ref,
                 sa = ref_sa,
@@ -101,7 +67,6 @@ workflow GATK3_Germline_Variants {
                 disk_size = large_disk_size,
                 picard_path = picard_path
             }
-        }
 
 
         call MarkDuplicates {
