@@ -1,157 +1,251 @@
-## version 1.0
-## Converts fastq files to BAM files --> Filtering Variants
+## Copyright Broad Institute 2020
+##
+## Variant Calling pipeline for fungal haploid genomes
+## Developed by Xiao Li (xiaoli@broadinstitute.org)
+## Fungal Genomics Group, Infectious Disease and Microbiome Program.
+## The Broad Institute of MIT and Harvard
+##
+## Verions of the software used in this WDL:
+##   PICARD_VER=1.782
+##   GATK37_VER=3.7-93-ge9d8068
+##   SAMTOOLS_VER=1.3.1
+##   BWA_VER=0.7.12
+##   TABIX_VER=0.2.5_r1005
+##   BGZIP_VER=1.3
+##
+## Cromwell version support
+## - Successfully tested on v28, v30 and v36
+## - Does not work on versions < v23 due to output syntax
+##
+## LICENSING :
+## This script is released under the WDL source code license (BSD-3) (see LICENSE in
+## https://github.com/broadinstitute/wdl). Note however that the programs it calls may
+## be subject to different licenses. Users are responsible for checking that they are
+## authorized to run all programs before running this script. Please see the dockers
+## for detailed licensing information pertaining to the included programs.
 
-# WORKFLOW DEFINITION
-workflow ConvertToBamAndFilter {
-input {
-        # input data
-        String sample_name
-        String fastq_1
-        String fastq_2
 
-        String run_name
+workflow GATK3_Germline_Variants {
+    ## config params
+    # input data
+    String run_name
 
-        File ref      # path to reference file
-        File ref_amb
-        File ref_ann
-        File ref_bwt
-        File ref_dict
-        File ref_fai
-        File ref_pac
-        File ref_sa
+    File ref                   # path to reference file
+    File ref_sa
+    File ref_bwt
+    File ref_amb
+    File ref_ann
+    File ref_pac
+    File ref_dict
+    File ref_index
+    Array[String] input_samples
+    Array[File] input_bams
 
-        # mem size/ disk size params
-        Int small_mem_size_gb
-        Int med_mem_size_gb
-        Int large_mem_size_gb
-        Int extra_large_mem_size_gb
+    # mem size/ disk size params
+    Int small_mem_size_gb
+    Int med_mem_size_gb
+    Int large_mem_size_gb
+    Int extra_large_mem_size_gb
 
-        Int disk_size
-        Int med_disk_size
-        Int large_disk_size
-        Int extra_large_disk_size
+    Int disk_size
+    Int med_disk_size
+    Int large_disk_size
+    Int extra_large_disk_size
 
-        String docker
+    String docker
 
-        String picard_path
-        String gatk_path
+    String picard_path
+    String gatk_path
 
-        # whether perform alignment or not to the input BAM files
-        Boolean do_align
+    # whether perform alignment or not to the input BAM files
+    Boolean do_align
 
-        # hard filtering params: both of these params are required
-        String snp_filter_expr
-        String indel_filter_expr
-}
-    ## TASK CALLS
-    # Converts fastq reads to BAM
-    call FastqToBam {
-    input:
-      sample_name = sample_name,
-      fq1 = fastq_1,
-      fq2 = fastq_2,
-      ref = ref,
-      sa = ref_sa,
-      bwt = ref_bwt,
-      amb = ref_amb,
-      ann = ref_ann,
-      pac = ref_pac,
-      dict = ref_dict,
-      fai = ref_index,
-      docker = docker,
-      mem_size_gb = small_mem_size_gb,
-      disk_size = large_disk_size,
-      picard_path = picard_path
-    }
+    # hard filtering params: both of these params are required
+    String snp_filter_expr
+    String indel_filter_expr
 
-    call MarkDuplicates {
-    input:
-      sample_name = sample_name,
-      sorted_bam = FastqToBam.bam,
-      docker = docker,
-      picard_path = picard_path,
-      mem_size_gb = small_mem_size_gb,
-      disk_size = disk_size
-    }
+    ## task calls
+    # run pipeline on each sample, in parallel
+    scatter(i in range(length(input_samples))) {
+        String sample_name = input_samples[i]
+        String input_bam = input_bams[i]
 
-    call ReorderBam {
-    input:
-      bam = MarkDuplicates.bam,
-      ref = ref,
-      dict = ref_dict,
-      docker = docker,
-      picard_path = picard_path,
-      mem_size_gb = med_mem_size_gb,
-      disk_size = disk_size
-    }
+        if (do_align) {
+            call SamToFastq {
+                input:
+                in_bam = input_bam,
+                sample_name = sample_name,
+                disk_size = large_disk_size,
+                mem_size_gb = small_mem_size_gb,
+                docker = docker,
+                picard_path = picard_path
+            }
 
-    call HaplotypeCaller {
-    input:
-      input_bam = ReorderBam.out,
-      input_bam_index = ReorderBam.out_index,
-      sample_name = sample_name,
-      gvcf_name = "${sample_name}.g.vcf",
-      gvcf_index = "${sample_name}.g.vcf.idx",
-      ref = ref,
-      ref_dict = ref_dict,
-      ref_index = ref_index,
-      mem_size_gb = med_mem_size_gb,
-      disk_size = med_disk_size,
-      docker = docker,
-      gatk_path = gatk_path
+            call AlignAndSortBAM {
+                input:
+                sample_name = sample_name,
+                fq1 = SamToFastq.fq1,
+                fq2 = SamToFastq.fq2,
+
+                ref = ref,
+                sa = ref_sa,
+                bwt = ref_bwt,
+                amb = ref_amb,
+                ann = ref_ann,
+                pac = ref_pac,
+                dict = ref_dict,
+                fai = ref_index,
+
+                docker = docker,
+                mem_size_gb = small_mem_size_gb,
+                disk_size = large_disk_size,
+                picard_path = picard_path
+            }
+        }
+
+
+        call MarkDuplicates {
+            input:
+            sample_name = sample_name,
+            sorted_bam = select_first([
+                AlignAndSortBAM.bam,
+                input_bam]),
+
+            docker = docker,
+            picard_path = picard_path,
+            mem_size_gb = small_mem_size_gb,
+            disk_size = disk_size
+        }
+
+        call ReorderBam {
+            input:
+            bam = MarkDuplicates.bam,
+
+            ref = ref,
+            dict = ref_dict,
+
+            docker = docker,
+            picard_path = picard_path,
+            mem_size_gb = med_mem_size_gb,
+            disk_size = disk_size
+        }
+
+        call HaplotypeCaller {
+            input:
+            input_bam = ReorderBam.out,
+            input_bam_index = ReorderBam.out_index,
+            sample_name = sample_name,
+
+            gvcf_name = "${sample_name}.g.vcf",
+            gvcf_index = "${sample_name}.g.vcf.idx",
+
+            ref = ref,
+            ref_dict = ref_dict,
+            ref_index = ref_index,
+
+            mem_size_gb = med_mem_size_gb,
+            disk_size = med_disk_size,
+            docker = docker,
+            gatk_path = gatk_path
+        }
     }
 
     call CombineGVCFs {
-    input:
-      vcf_files = HaplotypeCaller.output_gvcf,
-      vcf_index_files = HaplotypeCaller.output_gvcf_index,
-      ref = ref,
-      ref_dict = ref_dict,
-      ref_index = ref_index,
-      docker = docker,
-      gatk_path = gatk_path,
-      mem_size_gb = med_mem_size_gb,
-      disk_size = disk_size
+        input:
+        vcf_files = HaplotypeCaller.output_gvcf,
+        vcf_index_files = HaplotypeCaller.output_gvcf_index,
+
+        ref = ref,
+        ref_dict = ref_dict,
+        ref_index = ref_index,
+
+        docker = docker,
+        gatk_path = gatk_path,
+        mem_size_gb = med_mem_size_gb,
+        disk_size = disk_size
     }
 
     call GenotypeGVCFs {
-    input:
-      vcf_file = CombineGVCFs.out,
-      vcf_index_file = CombineGVCFs.out_index,
-      ref = ref,
-      ref_dict = ref_dict,
-      ref_index = ref_index,
-      docker = docker,
-      gatk_path = gatk_path,
-      mem_size_gb = med_mem_size_gb,
-      disk_size = disk_size
+        input:
+        vcf_file = CombineGVCFs.out,
+        vcf_index_file = CombineGVCFs.out_index,
+
+        ref = ref,
+        ref_dict = ref_dict,
+        ref_index = ref_index,
+
+        docker = docker,
+        gatk_path = gatk_path,
+        mem_size_gb = med_mem_size_gb,
+        disk_size = disk_size
     }
 
     call HardFiltration {
-    input:
-      vcf = GenotypeGVCFs.output_vcf_name,
-      vcf_index = GenotypeGVCFs.output_vcf_index_name,
-      snp_filter_expr = snp_filter_expr,
-      indel_filter_expr = indel_filter_expr,
-      ref = ref,
-      ref_dict = ref_dict,
-      ref_index = ref_index,
-      output_filename = "${run_name}.hard_filtered.vcf.gz",
-      docker = docker,
-      gatk_path = gatk_path,
-      mem_size_gb = extra_large_mem_size_gb,
-      disk_size = extra_large_disk_size
+        input:
+        vcf = GenotypeGVCFs.output_vcf_name,
+        vcf_index = GenotypeGVCFs.output_vcf_index_name,
+        snp_filter_expr = snp_filter_expr,
+        indel_filter_expr = indel_filter_expr,
+
+        ref = ref,
+        ref_dict = ref_dict,
+        ref_index = ref_index,
+
+        output_filename = "${run_name}.hard_filtered.vcf.gz",
+
+        docker = docker,
+        gatk_path = gatk_path,
+        mem_size_gb = extra_large_mem_size_gb,
+        disk_size = extra_large_disk_size
     }
 
     output {
-      File gvcf = HardFiltration.out
+        File gvcf = HardFiltration.out
     }
 }
-# TASK DEFINITIONS
 
-# Converts fastq reads to BAM
-task FastqToBam {
-  String sample_name
+
+## TASK DEFINITIONS
+task SamToFastq {
+    File in_bam
+    String sample_name
+
+    Int disk_size
+    Int mem_size_gb
+    String docker
+    String picard_path
+
+    String out_fq1 = "${sample_name}.1.fq"
+    String out_fq2 = "${sample_name}.2.fq"
+    command {
+        java -Xmx${mem_size_gb}G -jar ${picard_path} SamToFastq INPUT=${in_bam} FASTQ=${out_fq1} SECOND_END_FASTQ=${out_fq2} VALIDATION_STRINGENCY=LENIENT
+    }
+    output {
+        String done = "Done"
+        File fq1 = out_fq1
+        File fq2 = out_fq2
+    }
+
+    runtime {
+        preemptible: 3
+        docker: docker
+        memory: mem_size_gb + " GB"
+        disks: "local-disk " + disk_size + " HDD"
+    }
+
+    parameter_meta {
+        picard: "The absolute path to the picard jar to execute."
+        in_bam: "The bam file to convert to fastq."
+        sample_dir: "The sample-specific directory inside output_dir for each sample."
+        sample_name: "The name of the sample as indicated by the 1st column of the gatk.samples_file json input."
+        out_fq1: "The fastq file containing the first read of each pair."
+        out_fq2: "The fastq file containing the second read of each pair"
+    }
+}
+
+
+task AlignAndSortBAM {
+    String sample_name
 
     File fq1
     File fq2
@@ -177,27 +271,28 @@ task FastqToBam {
     }
 
     output {
-      File bam = "${sample_name}.sorted.bam"
+        File bam = "${sample_name}.sorted.bam"
     }
 
     runtime {
-      task_name: "AlignBAM"
-      preemptible: 5
-      docker: docker
-      memory: mem_size_gb + " GB"
-      disks: "local-disk "+ disk_size + " HDD"
+        task_name: "AlignBAM"
+        preemptible: 5
+        docker: docker
+        memory: mem_size_gb + " GB"
+        disks: "local-disk "+ disk_size + " HDD"
     }
 
     parameter_meta {
-      ref: "fasta file of reference genome"
-      sample_dir: "The sample-specific directory inside output_dir for each sample."
-      sample_name: "The name of the sample as indicated by the 1st column of the gatk.samples_file json input."
-      fq_array: "An array containing the paths to the first and second fastq files."
-      read_group: "The read group string that will be included in the bam header."
+        ref: "fasta file of reference genome"
+        sample_dir: "The sample-specific directory inside output_dir for each sample."
+        sample_name: "The name of the sample as indicated by the 1st column of the gatk.samples_file json input."
+        fq_array: "An array containing the paths to the first and second fastq files."
+        read_group: "The read group string that will be included in the bam header."
     }
 }
 
-# mark duplicate reads in BAM
+
+# mark duplicate reads in bam
 task MarkDuplicates {
     File sorted_bam
     String sample_name
@@ -217,16 +312,17 @@ task MarkDuplicates {
     }
 
     output {
-      File bam = "${sample_name}.marked_duplicates.bam"
+        File bam = "${sample_name}.marked_duplicates.bam"
     }
 
     runtime {
-      preemptible: 3
-      docker: docker
-      memory: mem_size_gb + " GB"
-      disks: "local-disk " + disk_size + " HDD"
+        preemptible: 3
+        docker: docker
+        memory: mem_size_gb + " GB"
+        disks: "local-disk " + disk_size + " HDD"
     }
 }
+
 
 # reorder and index a bam
 task ReorderBam {
@@ -255,15 +351,15 @@ task ReorderBam {
     }
 
     output {
-      File out = "${bam_prefix}.reordered.bam"
-      File out_index = "${bam_prefix}.reordered.bai"
+        File out = "${bam_prefix}.reordered.bam"
+        File out_index = "${bam_prefix}.reordered.bai"
     }
 
     runtime {
-      preemptible: 3
-      docker: docker
-      memory: mem_size_gb + " GB"
-      disks: "local-disk " + disk_size + " HDD"
+        preemptible: 3
+        docker: docker
+        memory: mem_size_gb + " GB"
+        disks: "local-disk " + disk_size + " HDD"
     }
 }
 
@@ -294,15 +390,15 @@ task CombineGVCFs {
             --variant ${sep=" --variant " vcf_files}
     }
     output {
-      File out = gvcf_out
-      File out_index = gvcf_out_index
+       File out = gvcf_out
+       File out_index = gvcf_out_index
     }
 
     runtime {
-      preemptible: 4
-      docker:docker
-      memory: mem_size_gb + " GB"
-      disks: "local-disk " + disk_size + " HDD"
+        preemptible: 4
+        docker:docker
+        memory: mem_size_gb + " GB"
+        disks: "local-disk " + disk_size + " HDD"
     }
 }
 
@@ -331,15 +427,15 @@ task GenotypeGVCFs {
             --variant ${vcf_file} \
     }
     output {
-      File output_vcf_name = gvcf_out
-      File output_vcf_index_name = "${gvcf_out}.tbi"
+        File output_vcf_name = gvcf_out
+        File output_vcf_index_name = "${gvcf_out}.tbi"
     }
 
     runtime {
-      preemptible: 4
-      docker: docker
-      memory: mem_size_gb + " GB"
-      disks: "local-disk " + disk_size + " HDD"
+        preemptible: 4
+        docker: docker
+        memory: mem_size_gb + " GB"
+        disks: "local-disk " + disk_size + " HDD"
     }
 }
 
@@ -410,14 +506,14 @@ task HardFiltration {
     }
 
     output {
-      File out = "${output_filename}"
+        File out = "${output_filename}"
     }
 
     runtime {
-      preemptible: 3
-      docker:docker
-      memory: mem_size_gb + " GB"
-      disks: "local-disk " + disk_size + " HDD"
+        preemptible: 3
+        docker:docker
+        memory: mem_size_gb + " GB"
+        disks: "local-disk " + disk_size + " HDD"
     }
 }
 
@@ -472,11 +568,11 @@ task HaplotypeCaller {
   }
 
   parameter_meta {
-    gatk: "Executable jar for the GenomeAnalysisTK"
-    ref: "fasta file of reference genome"
-    sample_name: "The name of the sample as indicated by the 1st column of the gatk.samples_file json input."
-    sample_dir: "The sample-specific directory inside output_dir for each sample."
-    in_bam: "The bam file to call HaplotypeCaller on."
-    out: "VCF file produced by haplotype caller."
+      gatk: "Executable jar for the GenomeAnalysisTK"
+      ref: "fasta file of reference genome"
+      sample_name: "The name of the sample as indicated by the 1st column of the gatk.samples_file json input."
+      sample_dir: "The sample-specific directory inside output_dir for each sample."
+      in_bam: "The bam file to call HaplotypeCaller on."
+      out: "VCF file produced by haplotype caller."
   }
 }
