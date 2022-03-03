@@ -55,7 +55,7 @@ workflow ConvertToBamAndFilter {
                 ann = ref_ann,
                 pac = ref_pac,
                 dict = ref_dict,
-                fai = ref_index,
+                fai = ref_fai,
 
                 docker = docker,
                 mem_size_gb = small_mem_size_gb,
@@ -99,7 +99,7 @@ workflow ConvertToBamAndFilter {
 
             ref = ref,
             ref_dict = ref_dict,
-            ref_index = ref_index,
+            ref_index = ref_fai,
 
             mem_size_gb = med_mem_size_gb,
             disk_size = med_disk_size,
@@ -114,7 +114,7 @@ workflow ConvertToBamAndFilter {
 
         ref = ref,
         ref_dict = ref_dict,
-        ref_index = ref_index,
+        ref_index = ref_fai,
 
         docker = docker,
         gatk_path = gatk_path,
@@ -129,7 +129,7 @@ workflow ConvertToBamAndFilter {
 
         ref = ref,
         ref_dict = ref_dict,
-        ref_index = ref_index,
+        ref_index = ref_fai,
 
         docker = docker,
         gatk_path = gatk_path,
@@ -146,7 +146,7 @@ workflow ConvertToBamAndFilter {
 
         ref = ref,
         ref_dict = ref_dict,
-        ref_index = ref_index,
+        ref_index = ref_fai,
 
         output_filename = "${run_name}.hard_filtered.vcf.gz",
 
