@@ -10,16 +10,14 @@ workflow ConvertToBamAndFilter {
     String fastq_1
     String fastq_2
 
-    File ref                   # path to reference file
-    File ref_sa
-    File ref_bwt
+    File ref      # path to reference file
     File ref_amb
     File ref_ann
-    File ref_pac
+    File ref_bwt
     File ref_dict
-    File ref_index
-    Array[String] input_samples
-    Array[File] input_bams
+    File ref_fai
+    File ref_pac
+    File ref_sa
 
     # mem size/ disk size params
     Int small_mem_size_gb
@@ -36,9 +34,6 @@ workflow ConvertToBamAndFilter {
 
     String picard_path
     String gatk_path
-
-    # whether perform alignment or not to the input BAM files
-    Boolean do_align
 
     # hard filtering params: both of these params are required
     String snp_filter_expr
@@ -72,9 +67,7 @@ workflow ConvertToBamAndFilter {
         call MarkDuplicates {
             input:
             sample_name = sample_name,
-            sorted_bam = select_first([
-                AlignAndSortBAM.bam,
-                input_bam]),
+            sorted_bam = AlignAndSortBAM.bam
 
             docker = docker,
             picard_path = picard_path,
