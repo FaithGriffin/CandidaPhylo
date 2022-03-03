@@ -2,7 +2,7 @@
 ## Converts fastq files to BAM files --> Filtering Variants
 
 # WORKFLOW DEFINITION
-workflow GATK3_Germline_Variants {
+workflow ConvertToBamAndFilter {
     ## config params
     # input data
     String run_name
@@ -113,7 +113,6 @@ workflow GATK3_Germline_Variants {
             docker = docker,
             gatk_path = gatk_path
         }
-    }
 
     call CombineGVCFs {
         input:
