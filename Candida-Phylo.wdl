@@ -146,7 +146,7 @@ workflow ConvertToBamAndFilter {
     output {
       File gvcf = HardFiltration.out
     }
-
+}
 # TASK DEFINITIONS
 
 # Converts fastq reads to BAM
