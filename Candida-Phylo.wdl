@@ -146,7 +146,6 @@ workflow ConvertToBamAndFilter {
     output {
       File gvcf = HardFiltration.out
     }
-}
 
 # TASK DEFINITIONS
 
