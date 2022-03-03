@@ -3,7 +3,6 @@
 
 # WORKFLOW DEFINITION
 workflow ConvertToBamAndFilter {
-    input {
         # input data
         String fastq_1
         String fastq_2
@@ -41,7 +40,6 @@ workflow ConvertToBamAndFilter {
         # hard filtering params: both of these params are required
         String snp_filter_expr
         String indel_filter_expr
-    }
 
     ## TASK CALLS
     # Converts fastq reads to BAM
