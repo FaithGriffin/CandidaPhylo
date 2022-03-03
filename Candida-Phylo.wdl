@@ -67,7 +67,7 @@ workflow ConvertToBamAndFilter {
         call MarkDuplicates {
             input:
             sample_name = sample_name,
-            sorted_bam = AlignAndSortBAM.bam
+            sorted_bam = AlignAndSortBAM.bam,
 
             docker = docker,
             picard_path = picard_path,
