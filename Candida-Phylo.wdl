@@ -49,8 +49,14 @@ workflow GATK3_Germline_Variants {
     String snp_filter_expr
     String indel_filter_expr
 
-    ## task calls
-    # run pipeline on each sample, in parallel
+    ## TASK CALLS
+
+    # scatter():
+    # runs pipeline on each sample, in parallel (scatter-gather parallelism)
+    # will produce parallelizable jobs running the same task on each input in an array
+    # output: an array
+    # see: https://support.terra.bio/hc/en-us/articles/360037128572-Scatter-gather-parallelism
+    # see: https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md#scatter
     scatter(i in range(length(input_samples))) {
         String sample_name = input_samples[i]
         String input_bam = input_bams[i]
@@ -191,6 +197,9 @@ workflow GATK3_Germline_Variants {
 
 
 ## TASK DEFINITIONS
+# see run time attributes: https://cromwell.readthedocs.io/en/stable/RuntimeAttributes/
+
+
 task SamToFastq {
     File in_bam
     String sample_name
