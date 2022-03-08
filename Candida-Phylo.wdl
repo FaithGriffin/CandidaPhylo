@@ -1,10 +1,3 @@
-## Copyright Broad Institute 2020
-##
-## Variant Calling pipeline for fungal haploid genomes
-## Developed by Xiao Li (xiaoli@broadinstitute.org)
-## Fungal Genomics Group, Infectious Disease and Microbiome Program.
-## The Broad Institute of MIT and Harvard
-##
 ## Verions of the software used in this WDL:
 ##   PICARD_VER=1.782
 ##   GATK37_VER=3.7-93-ge9d8068
@@ -16,13 +9,6 @@
 ## Cromwell version support
 ## - Successfully tested on v28, v30 and v36
 ## - Does not work on versions < v23 due to output syntax
-##
-## LICENSING :
-## This script is released under the WDL source code license (BSD-3) (see LICENSE in
-## https://github.com/broadinstitute/wdl). Note however that the programs it calls may
-## be subject to different licenses. Users are responsible for checking that they are
-## authorized to run all programs before running this script. Please see the dockers
-## for detailed licensing information pertaining to the included programs.
 
 
 workflow GATK3_Germline_Variants {
