@@ -199,7 +199,9 @@ workflow CandidaPhylo {
 ## TASK DEFINITIONS
 # see run time attributes: https://cromwell.readthedocs.io/en/stable/RuntimeAttributes/
 
-
+# Converts a SAM or BAM file to FASTQ. Extracts read sequences and qualities from the input SAM/BAM file 
+# and writes them intothe output file in Sanger FASTQ format using picard.
+# see: https://gatk.broadinstitute.org/hc/en-us/articles/360036485372-SamToFastq-Picard-
 task SamToFastq {
     File in_bam
     String sample_name
@@ -230,7 +232,6 @@ task SamToFastq {
     parameter_meta {
         picard: "The absolute path to the picard jar to execute."
         in_bam: "The bam file to convert to fastq."
-        sample_dir: "The sample-specific directory inside output_dir for each sample."
         sample_name: "The name of the sample as indicated by the 1st column of the gatk.samples_file json input."
         out_fq1: "The fastq file containing the first read of each pair."
         out_fq2: "The fastq file containing the second read of each pair"
@@ -278,7 +279,6 @@ task AlignAndSortBAM {
 
     parameter_meta {
         ref: "fasta file of reference genome"
-        sample_dir: "The sample-specific directory inside output_dir for each sample."
         sample_name: "The name of the sample as indicated by the 1st column of the gatk.samples_file json input."
         fq_array: "An array containing the paths to the first and second fastq files."
         read_group: "The read group string that will be included in the bam header."
@@ -565,7 +565,6 @@ task HaplotypeCaller {
       gatk: "Executable jar for the GenomeAnalysisTK"
       ref: "fasta file of reference genome"
       sample_name: "The name of the sample as indicated by the 1st column of the gatk.samples_file json input."
-      sample_dir: "The sample-specific directory inside output_dir for each sample."
       in_bam: "The bam file to call HaplotypeCaller on."
       out: "VCF file produced by haplotype caller."
   }
