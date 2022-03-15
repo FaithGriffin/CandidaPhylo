@@ -200,7 +200,7 @@ workflow CandidaPhylo {
 # see run time attributes: https://cromwell.readthedocs.io/en/stable/RuntimeAttributes/
 
 # Converts a SAM or BAM file to FASTQ. Extracts read sequences and qualities from the input SAM/BAM file 
-# and writes them intothe output file in Sanger FASTQ format using picard.
+# and writes them into the output file in Sanger FASTQ format using picard.
 # see: https://gatk.broadinstitute.org/hc/en-us/articles/360036485372-SamToFastq-Picard-
 task SamToFastq {
     File in_bam
@@ -238,7 +238,11 @@ task SamToFastq {
     }
 }
 
-
+# aligns the fastq reads given the reference file (using bwa and samtools)
+# and sorts the BAM file by coordinate (using picard)
+# see: http://bio-bwa.sourceforge.net/bwa.shtml
+# see: https://gatk.broadinstitute.org/hc/en-us/articles/360040098192-SortSam-Picard-
+# see: https://www.biostars.org/p/368858/
 task AlignAndSortBAM {
     String sample_name
 
@@ -285,8 +289,8 @@ task AlignAndSortBAM {
     }
 }
 
-
-# mark duplicate reads in bam
+# marks duplicate reads in BAM file
+# see: https://gatk.broadinstitute.org/hc/en-us/articles/360037052812-MarkDuplicates-Picard-
 task MarkDuplicates {
     File sorted_bam
     String sample_name
@@ -318,7 +322,9 @@ task MarkDuplicates {
 }
 
 
-# reorder and index a bam
+# reorder and index a BAM
+# see: https://gatk.broadinstitute.org/hc/en-us/articles/360037426651-ReorderSam-Picard-
+# see: https://gatk.broadinstitute.org/hc/en-us/articles/360037057932-BuildBamIndex-Picard-
 task ReorderBam {
     File ref
     File dict
@@ -333,7 +339,7 @@ task ReorderBam {
     Int cmd_mem_size_gb = mem_size_gb - 1
 
     command {
-        # reorder bam
+        # reorder BAM
         java -Xmx${cmd_mem_size_gb}G -jar ${picard_path} ReorderSam \
             I=${bam} \
             O=${bam_prefix}.reordered.bam \
@@ -433,10 +439,9 @@ task GenotypeGVCFs {
     }
 }
 
-
+# hard-filter a vcf, if vqsr not available
+# http://gatkforums.broadinstitute.org/gatk/discussion/2806/howto-apply-hard-filters-to-a-call-set
 task HardFiltration {
-    # hard-filter a vcf, if vqsr not available
-    # http://gatkforums.broadinstitute.org/gatk/discussion/2806/howto-apply-hard-filters-to-a-call-set
     File ref
     File vcf
     File vcf_index
