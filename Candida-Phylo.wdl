@@ -11,7 +11,7 @@
 ## - Does not work on versions < v23 due to output syntax
 
 
-workflow GATK3_Germline_Variants {
+workflow CandidaPhylo {
     # input data
     String run_name
 
