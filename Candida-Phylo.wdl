@@ -24,7 +24,8 @@ workflow CandidaPhylo {
     File ref_dict
     File ref_index
     Array[String] input_samples
-    Array[File] input_bams
+    Array[File] input_fastqs_1
+    Array[File] input_fastqs_2
 
     # mem size/ disk size params
     Int small_mem_size_gb
@@ -62,21 +63,12 @@ workflow CandidaPhylo {
         String input_bam = input_bams[i]
 
         if (do_align) {
-            call SamToFastq {
-                input:
-                in_bam = input_bam,
-                sample_name = sample_name,
-                disk_size = large_disk_size,
-                mem_size_gb = small_mem_size_gb,
-                docker = docker,
-                picard_path = picard_path
-            }
 
             call AlignAndSortBAM {
                 input:
                 sample_name = sample_name,
-                fq1 = SamToFastq.fq1,
-                fq2 = SamToFastq.fq2,
+                fq1 = input_fastqs_1[i],
+                fq2 = input_fastqs_2[i],
 
                 ref = ref,
                 sa = ref_sa,
@@ -198,45 +190,6 @@ workflow CandidaPhylo {
 
 ## TASK DEFINITIONS
 # see run time attributes: https://cromwell.readthedocs.io/en/stable/RuntimeAttributes/
-
-# Converts a SAM or BAM file to FASTQ. Extracts read sequences and qualities from the input SAM/BAM file 
-# and writes them into the output file in Sanger FASTQ format using picard.
-# see: https://gatk.broadinstitute.org/hc/en-us/articles/360036485372-SamToFastq-Picard-
-task SamToFastq {
-    File in_bam
-    String sample_name
-
-    Int disk_size
-    Int mem_size_gb
-    String docker
-    String picard_path
-
-    String out_fq1 = "${sample_name}.1.fq"
-    String out_fq2 = "${sample_name}.2.fq"
-    command {
-        java -Xmx${mem_size_gb}G -jar ${picard_path} SamToFastq INPUT=${in_bam} FASTQ=${out_fq1} SECOND_END_FASTQ=${out_fq2} VALIDATION_STRINGENCY=LENIENT
-    }
-    output {
-        String done = "Done"
-        File fq1 = out_fq1
-        File fq2 = out_fq2
-    }
-
-    runtime {
-        preemptible: 3
-        docker: docker
-        memory: mem_size_gb + " GB"
-        disks: "local-disk " + disk_size + " HDD"
-    }
-
-    parameter_meta {
-        picard: "The absolute path to the picard jar to execute."
-        in_bam: "The bam file to convert to fastq."
-        sample_name: "The name of the sample as indicated by the 1st column of the gatk.samples_file json input."
-        out_fq1: "The fastq file containing the first read of each pair."
-        out_fq2: "The fastq file containing the second read of each pair"
-    }
-}
 
 # aligns the fastq reads given the reference file (using bwa and samtools)
 # and sorts the BAM file by coordinate (using picard)
