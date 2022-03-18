@@ -2,7 +2,11 @@
     "CandidaPhylo.input_samples":[
         "C1", 
         "C4"],
-    "CandidaPhylo.input_bams":[
+    "CandidaPhylo.input_fastqs_1":[
+        "C1_sample.bam", 
+        "C4_sample.bam"],
+    
+    "CandidaPhylo.input_fastqs_2":[
         "C1_sample.bam", 
         "C4_sample.bam"],
 
