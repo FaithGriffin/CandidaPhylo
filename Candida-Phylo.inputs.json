@@ -1,14 +1,18 @@
 {
     "CandidaPhylo.input_samples":[
         "C1", 
-        "C4"],
+        "C4",
+        "C6"],
+    
     "CandidaPhylo.input_fastqs_1":[
-        "C1_sample.bam", 
-        "C4_sample.bam"],
+        "FASTQ/C1_1.sample.fastq", 
+        "FASTQ/C4_1.sample.fastq",
+        "FASTQ/C6_1.sample.fastq"],
     
     "CandidaPhylo.input_fastqs_2":[
-        "C1_sample.bam", 
-        "C4_sample.bam"],
+        "FASTQ/C1_2.sample.fastq", 
+        "FASTQ/C4_2.sample.fastq",
+        "FASTQ/C6_2.sample.fastq"],
 
     "CandidaPhylo.do_align":true,
     "CandidaPhylo.run_name":"test",
