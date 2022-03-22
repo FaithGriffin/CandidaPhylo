@@ -60,7 +60,6 @@ workflow CandidaPhylo {
     # see: https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md#scatter
     scatter(i in range(length(input_samples))) {
         String sample_name = input_samples[i]
-        String input_bam = input_bams[i]
 
         if (do_align) {
 
@@ -90,9 +89,7 @@ workflow CandidaPhylo {
         call MarkDuplicates {
             input:
             sample_name = sample_name,
-            sorted_bam = select_first([
-                AlignAndSortBAM.bam,
-                input_bam]),
+            sorted_bam = AlignAndSortBAM.bam,
 
             docker = docker,
             picard_path = picard_path,
