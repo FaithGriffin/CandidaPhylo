@@ -496,7 +496,7 @@ task HaplotypeCaller {
       -I ${input_bam} \
       -o ${gvcf_name} \
       -ERC "GVCF" \
-      -ploidy 1 \
+      -ploidy 2 \
       -variant_index_type LINEAR \
       -variant_index_parameter 128000 \
       --read_filter OverclippedRead
